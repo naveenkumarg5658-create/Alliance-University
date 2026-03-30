@@ -10,7 +10,8 @@
   :root {
     --bg: #f5f2eb; --surface: #ffffff; --surface2: #fcfaf6; --border: #d8d2c4;
     --ink: #1a1714; --muted: #7a7368; --easy: #3d9970; --medium: #e67e22;
-    --hard: #c0392b; --accent: #2c5f8a; --tag-bg: #1a1714; --tag-text: #f5f2eb;
+    --hard: #c0392b; --accent: #2c5f8a; --rank: #7b2d8b;
+    --tag-bg: #1a1714; --tag-text: #f5f2eb;
     --font-head: 'Clash Display', 'Georgia', serif;
     --font-mono: 'DM Mono', monospace;
     --shadow: 0 2px 12px rgba(26,23,20,0.08);
@@ -149,11 +150,13 @@
   .metrics-group { display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); box-shadow: var(--shadow); flex: 1; animation: fadeUp 0.4s ease both; }
   .metrics-group.students { animation-delay: 0.05s; border-color: #d4c8f0; }
   .metrics-group.questions { animation-delay: 0.1s; border-color: #b8ddc8; }
+  .metrics-group.ranking { animation-delay: 0.15s; border-color: #e4c8f0; }
   .metrics-group-label { font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; font-family: var(--font-mono); font-weight: 600; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
   .metrics-group.students .metrics-group-label { background: #ede8ff; color: #5a3fa0; border-bottom: 1px solid #d4c8f0; }
   .metrics-group.questions .metrics-group-label { background: #e4f7ed; color: #1e6e47; border-bottom: 1px solid #b8ddc8; }
+  .metrics-group.ranking .metrics-group-label { background: #f5e4ff; color: #7b2d8b; border-bottom: 1px solid #e4c8f0; }
   .metrics-group-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-  .students .metrics-group-dot { background: #7b5fe0; } .questions .metrics-group-dot { background: var(--easy); }
+  .students .metrics-group-dot { background: #7b5fe0; } .questions .metrics-group-dot { background: var(--easy); } .ranking .metrics-group-dot { background: var(--rank); }
   .metrics-group-cards { display: flex; flex: 1; background: var(--surface); }
   .metrics-group-cards .metric-card { border: none; border-radius: 0; box-shadow: none; flex: 1; margin: 0; animation: none; padding: 14px 18px; }
   .metrics-group-cards .metric-card + .metric-card { border-left: 1px solid var(--border); }
@@ -161,7 +164,7 @@
   .metric-label { font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
   .metric-value { font-family: var(--font-head); font-size: 2.2rem; font-weight: 700; line-height: 1; color: var(--ink); }
   .metric-value.easy { color: var(--easy); } .metric-value.medium { color: var(--medium); }
-  .metric-value.hard { color: var(--hard); } .metric-value.accent { color: var(--accent); }
+  .metric-value.hard { color: var(--hard); } .metric-value.accent { color: var(--accent); } .metric-value.rank { color: var(--rank); }
   .metric-sub { font-size: 0.7rem; color: var(--muted); margin-top: 6px; }
 
   /* ── CHARTS ── */
@@ -204,6 +207,7 @@
   .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 500; text-align: center; min-width: 32px; }
   .badge-easy { background: #d4f1e4; color: #1e6e47; } .badge-medium { background: #fde9d3; color: #8a4300; }
   .badge-hard { background: #fad5d5; color: #7a1a1a; } .badge-zero { background: var(--surface2); color: var(--muted); }
+  .badge-rank { background: #f3e4ff; color: #7b2d8b; }
   .total-bar-wrap { width: 120px; background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 8px; }
   .total-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--easy), var(--accent)); transition: width 0.4s ease; }
   .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-top: 1px solid var(--border); font-size: 0.72rem; color: var(--muted); }
@@ -304,6 +308,10 @@
         <div class="metrics-group-label"><span class="metrics-group-dot"></span>Questions Solved</div>
         <div class="metrics-group-cards" id="metricsQuestions"></div>
       </div>
+      <div class="metrics-group ranking">
+        <div class="metrics-group-label"><span class="metrics-group-dot"></span>Global Ranking</div>
+        <div class="metrics-group-cards" id="metricsRanking"></div>
+      </div>
     </div>
 
     <div class="section-header">
@@ -331,6 +339,12 @@
         </div>
         <div class="chart-container" style="height:300px"><canvas id="topStudentsChart"></canvas></div>
       </div>
+      <!-- Global Rank chart -->
+      <div class="chart-card chart-wide">
+        <div class="chart-title">Top 15 Students — Global Rank</div>
+        <div class="chart-sub">Lower rank number = better position on LeetCode</div>
+        <div class="chart-container" style="height:280px"><canvas id="globalRankChart"></canvas></div>
+      </div>
     </div>
 
     <div class="section-header no-print">
@@ -352,6 +366,7 @@
             <button class="sort-col-btn" onclick="setSortCol('easy', this)">Easy</button>
             <button class="sort-col-btn" onclick="setSortCol('medium', this)">Medium</button>
             <button class="sort-col-btn" onclick="setSortCol('hard', this)">Hard</button>
+            <button class="sort-col-btn" onclick="setSortCol('globalRank', this)">G.Rank</button>
             <button class="sort-dir-btn" id="sortDirBtn" onclick="toggleSortDir()">&#8595; Desc</button>
           </div>
         </div>
@@ -367,6 +382,7 @@
               <th onclick="sortTable('medium')">Medium</th>
               <th onclick="sortTable('hard')">Hard</th>
               <th onclick="sortTable('total')">Total</th>
+              <th onclick="sortTable('globalRank')" style="color:var(--rank)">Global Rank</th>
               <th>Progress</th>
             </tr>
           </thead>
@@ -495,13 +511,10 @@ function startCountdown() {
 }
 
 // ── SWITCH CLASS ──────────────────────────────────────────────────────
-// FIX: removed the early-return guard that blocked re-fetching on class switch;
-//      also removed `firstLoad` global — now each switchClass call is fresh.
 function switchClass(cls) {
   activeClass = cls;
   document.getElementById('classSelect').value = cls;
 
-  // Reset filters & UI
   currentFilter = 'all'; currentSearch = ''; currentSort = {key:'total', dir:'desc'}; currentPage = 1;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.filter-btn').classList.add('active');
@@ -511,16 +524,12 @@ function switchClass(cls) {
   const si = document.getElementById('searchInput');
   if (si) si.value = '';
 
-  // Update label bar
   const cfg = CLASS_CONFIG[cls];
   document.getElementById('classLabelBadge').textContent = cfg.label;
   document.getElementById('classLabelName').textContent = cfg.name;
   document.getElementById('printHeader').textContent = `All Students — ${cfg.name}`;
-
-  // Update sheet link
   document.getElementById('sheetLink').href = `https://docs.google.com/spreadsheets/d/${cfg.sheetId}/edit`;
 
-  // Show skeleton, hide dashboard while loading
   document.getElementById('skeleton').classList.add('show');
   document.getElementById('dashboard').style.display = 'none';
 
@@ -543,7 +552,6 @@ async function fetchData(manual = false) {
         const res = await fetch(url, {cache: 'no-store'});
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const t = await res.text();
-        // Handle allorigins JSON wrapper
         if (t.trim().startsWith('{') && t.includes('"contents"')) {
           text = JSON.parse(t).contents;
         } else {
@@ -575,7 +583,6 @@ async function fetchData(manual = false) {
        2. Open this file in a browser <b>with internet access</b><br>
        3. Try Chrome or a different network (mobile data if on school Wi-Fi)<br>
        4. Verify the Sheet ID in CLASS_CONFIG matches the actual Google Sheet URL`;
-    // Still show dashboard (empty state) rather than leaving blank
     applyData([]);
     document.getElementById('skeleton').classList.remove('show');
     document.getElementById('dashboard').style.display = 'block';
@@ -585,9 +592,6 @@ async function fetchData(manual = false) {
 }
 
 // ── PARSE CSV ─────────────────────────────────────────────────────────
-// FIX: Greatly expanded column alias matching so headers like
-//      "No of Easy", "No of Medium", "No of Hard", "Student Name" (with extra spaces),
-//      numbered columns, etc. are all detected correctly.
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) throw new Error('File appears empty');
@@ -603,16 +607,13 @@ function parseCSV(text) {
     return cells;
   });
 
-  // Find header row — scan first 8 rows for flexibility
   let hIdx = -1;
   for (let i = 0; i < Math.min(rows.length, 8); i++) {
     const joined = rows[i].join('|').toLowerCase();
-    // Must contain something name-like AND at least one difficulty keyword
     const hasName = /(student|name)/i.test(joined);
     const hasDiff = /(easy|medium|hard)/i.test(joined);
     if (hasName && hasDiff) { hIdx = i; break; }
   }
-  // Fallback: any row containing all three difficulty words
   if (hIdx === -1) {
     for (let i = 0; i < Math.min(rows.length, 8); i++) {
       const joined = rows[i].join('|').toLowerCase();
@@ -626,17 +627,13 @@ function parseCSV(text) {
     throw new Error(`Could not find header row. First rows of sheet:\n${sample}`);
   }
 
-  // Normalise header: lowercase, collapse whitespace
   const headers = rows[hIdx].map(h => h.toLowerCase().replace(/\s+/g,' ').trim());
 
-  // Flexible column finder — checks multiple aliases and partial matches
   const col = (...aliases) => {
-    // Exact match first
     for (const a of aliases) {
       const i = headers.findIndex(h => h === a.toLowerCase());
       if (i >= 0) return i;
     }
-    // Partial / contains match
     for (const a of aliases) {
       const needle = a.toLowerCase();
       const i = headers.findIndex(h => h.includes(needle) || needle.includes(h));
@@ -645,33 +642,40 @@ function parseCSV(text) {
     return -1;
   };
 
-  const nameC = col('student name', 'name', 'studentname', 'student');
-  const easyC = col('easy', 'no of easy', 'easy solved', 'easy problems', 'no.of easy');
-  const medC  = col('medium', 'med', 'no of medium', 'medium solved', 'medium problems', 'no.of medium');
-  const hardC = col('hard', 'no of hard', 'hard solved', 'hard problems', 'no.of hard');
-  const snoC  = col('s.no', 'sno', 's no', 'no', '#', 'serial', 'sl no', 'sl.no');
+  const nameC   = col('student name', 'name', 'studentname', 'student');
+  const easyC   = col('easy', 'no of easy', 'easy solved', 'easy problems', 'no.of easy');
+  const medC    = col('medium', 'med', 'no of medium', 'medium solved', 'medium problems', 'no.of medium');
+  const hardC   = col('hard', 'no of hard', 'hard solved', 'hard problems', 'no.of hard');
+  const snoC    = col('s.no', 'sno', 's no', 'no', '#', 'serial', 'sl no', 'sl.no');
+  // Global rank — accepts multiple common header names
+  const rankC   = col('global rank', 'globalrank', 'global_rank', 'leetcode rank', 'lc rank', 'rank', 'world rank', 'contest rank');
 
   if (nameC < 0 || easyC < 0 || medC < 0 || hardC < 0) {
     throw new Error(
       `Missing required columns (found: [${headers.join(', ')}]).\n` +
       `Need: "Student Name" (idx ${nameC}), "Easy" (idx ${easyC}), "Medium" (idx ${medC}), "Hard" (idx ${hardC}).\n` +
-      `Please ensure your MCA sheet headers exactly match one of: Student Name | Easy | Medium | Hard`
+      `Please ensure your sheet headers match one of the expected names.`
     );
   }
 
   const students = [];
   for (let i = hIdx + 1; i < rows.length; i++) {
     const r = rows[i];
-    // Skip rows that are completely empty or just commas
     if (!r || r.every(c => !c.trim())) continue;
     const name = (r[nameC] || '').trim().replace(/^"|"$/g, '');
     if (!name || /^[-\s,]*$/.test(name)) continue;
+
+    // Global rank: 0 means not ranked / not available
+    let gRankRaw = rankC >= 0 ? (r[rankC] || '').trim().replace(/,/g, '') : '';
+    const globalRank = gRankRaw && !isNaN(parseInt(gRankRaw)) ? Math.max(0, parseInt(gRankRaw)) : 0;
+
     students.push({
-      sno:    snoC >= 0 ? (parseInt(r[snoC]) || students.length + 1) : students.length + 1,
+      sno:        snoC >= 0 ? (parseInt(r[snoC]) || students.length + 1) : students.length + 1,
       name,
-      easy:   Math.max(0, parseInt(r[easyC])  || 0),
-      medium: Math.max(0, parseInt(r[medC])   || 0),
-      hard:   Math.max(0, parseInt(r[hardC])  || 0),
+      easy:       Math.max(0, parseInt(r[easyC])  || 0),
+      medium:     Math.max(0, parseInt(r[medC])   || 0),
+      hard:       Math.max(0, parseInt(r[hardC])  || 0),
+      globalRank,
     });
   }
   return students;
@@ -697,21 +701,35 @@ function renderMetrics() {
   const T = E + M + H, A = data.filter(d => d.total > 0).length;
   const pct = (n, d) => d === 0 ? '0' : ((n/d)*100).toFixed(0);
   const card = m => `<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-value ${m.cls||''}">${m.value}</div><div class="metric-sub">${m.sub}</div></div>`;
+
   document.getElementById('metricsStudents').innerHTML = [
     {label:"Total Students", value:data.length, sub:"enrolled", cls:""},
     {label:"Active Students", value:A, sub:`${pct(A,data.length)}% participation`, cls:""}
   ].map(card).join('');
+
   document.getElementById('metricsQuestions').innerHTML = [
     {label:"Total Solved",  value:T, sub:"Questions", cls:"accent"},
     {label:"Easy",   value:E, sub:`${pct(E,T||1)}% of total`, cls:"easy"},
     {label:"Medium", value:M, sub:`${pct(M,T||1)}% of total`, cls:"medium"},
     {label:"Hard",   value:H, sub:`${pct(H,T||1)}% of total`, cls:"hard"}
   ].map(card).join('');
+
+  // Global rank metrics
+  const ranked = data.filter(d => d.globalRank > 0);
+  const bestRank = ranked.length > 0 ? Math.min(...ranked.map(d => d.globalRank)) : 0;
+  const bestStudent = ranked.length > 0 ? ranked.find(d => d.globalRank === bestRank) : null;
+  const avgRank = ranked.length > 0 ? Math.round(ranked.reduce((a,b) => a+b.globalRank, 0) / ranked.length) : 0;
+
+  document.getElementById('metricsRanking').innerHTML = [
+    {label:"Ranked Students", value: ranked.length, sub:`out of ${data.length} students`, cls:"rank"},
+    {label:"Best Global Rank", value: bestRank > 0 ? '#'+bestRank.toLocaleString('en-IN') : '—', sub: bestStudent ? bestStudent.name.split(' ')[0] : 'N/A', cls:"rank"},
+    {label:"Avg Global Rank", value: avgRank > 0 ? '#'+avgRank.toLocaleString('en-IN') : '—', sub:"among ranked students", cls:"rank"}
+  ].map(card).join('');
 }
 
 // ── CHARTS ────────────────────────────────────────────────────────────
 function destroyCharts() {
-  ['difficultyChart','engagementChart','topStudentsChart'].forEach(id => {
+  ['difficultyChart','engagementChart','topStudentsChart','globalRankChart'].forEach(id => {
     if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
   });
 }
@@ -809,12 +827,78 @@ function renderCharts() {
               y:{stacked:true, grid:{color:'#eeeae0'}, ticks:{font:{family:'DM Mono',size:10}, color:'#7a7368', stepSize:2},
                  min:0, max:Math.max(5, ...top15.map(s=>s.total))+1}}}
   });
+
+  // ── GLOBAL RANK CHART ──
+  // Show top 15 by best (lowest) global rank; skip students without a rank
+  const ranked = [...data].filter(d => d.globalRank > 0).sort((a,b) => a.globalRank - b.globalRank).slice(0,15);
+
+  const grLabelPlugin = {id:'grLabelPlugin', afterDatasetDraw(chart) {
+    const {ctx} = chart;
+    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+      const v = ranked[i]?.globalRank; if (!v) return;
+      const label = '#' + v.toLocaleString('en-IN');
+      ctx.save(); ctx.font = 'bold 10px DM Mono, monospace'; ctx.fillStyle = '#7b2d8b';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(label, bar.x, bar.y - 4); ctx.restore();
+    });
+  }};
+
+  const emptyRankPlugin = {id:'emptyRankPlugin', afterDraw(c) {
+    if (ranked.length > 0) return;
+    const {ctx, width:w, height:h} = c; ctx.save();
+    ctx.font = '500 13px DM Mono, monospace'; ctx.fillStyle = '#b5afa6';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('No global rank data available yet', w/2, h/2); ctx.restore();
+  }};
+
+  chartInstances['globalRankChart'] = new Chart(document.getElementById('globalRankChart'), {
+    type: 'bar',
+    plugins: [grLabelPlugin, emptyRankPlugin],
+    data: {
+      labels: ranked.map(s => s.name.split(' ')[0]),
+      datasets: [{
+        label: 'Global Rank',
+        data: ranked.map(s => s.globalRank),
+        backgroundColor: ranked.map((_, i) => {
+          if (i === 0) return '#7b2d8b';
+          if (i === 1) return '#a052b8';
+          if (i === 2) return '#c47dd4';
+          return '#deb8ea';
+        }),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 28 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => ranked[items[0].dataIndex]?.name || '',
+            label: c => ` Global Rank: #${c.raw.toLocaleString('en-IN')}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#7a7368' } },
+        y: {
+          grid: { color: '#eeeae0' },
+          ticks: {
+            font: { family: 'DM Mono', size: 10 }, color: '#7a7368',
+            callback: v => '#' + v.toLocaleString('en-IN')
+          },
+          // Lower rank = better, so we reverse the axis
+          reverse: false,
+          title: { display: true, text: 'Rank Number (lower = better)', font: { family: 'DM Mono', size: 10 }, color: '#7a7368' }
+        }
+      }
+    }
+  });
 }
 
 // ── TABLE ─────────────────────────────────────────────────────────────
-// FIX: Removed the incorrect filter-by-sort-key lines.
-//      Sorting by "easy/medium/hard" now only controls the ORDER — it no longer
-//      hides students with 0 in that column.
 function getFiltered() {
   let d = [...data];
   if (currentFilter === 'active')   d = d.filter(s => s.total > 0);
@@ -841,6 +925,9 @@ function renderTable() {
   document.getElementById('tableBody').innerHTML = page.map((s, i) => {
     const pct = maxTotal > 0 ? (s.total/maxTotal)*100 : 0;
     const isTop = s.rank <= 3 && s.total > 0;
+    const rankDisplay = s.globalRank > 0
+      ? `<span class="badge badge-rank">#${s.globalRank.toLocaleString('en-IN')}</span>`
+      : `<span class="badge badge-zero">—</span>`;
     return `<tr class="${s.total===0?'no-attempt':''}">
       <td class="td-sno">${start+i+1}</td>
       <td class="td-name">${s.name}${isTop?`<span class="topper-tag">#${s.rank}</span>`:''}</td>
@@ -848,6 +935,7 @@ function renderTable() {
       <td><span class="badge ${s.medium>0?'badge-medium':'badge-zero'}">${s.medium}</span></td>
       <td><span class="badge ${s.hard>0?'badge-hard':'badge-zero'}">${s.hard}</span></td>
       <td><strong>${s.total}</strong></td>
+      <td>${rankDisplay}</td>
       <td><div class="total-bar-wrap"><div class="total-bar-fill" style="width:${pct}%"></div></div></td>
     </tr>`;
   }).join('');
@@ -866,10 +954,12 @@ function renderTable() {
 }
 
 function setSortCol(key, btn) {
-  currentSort.key = key; currentSort.dir = 'desc';
+  currentSort.key = key;
+  // For globalRank: ascending = best rank first (lowest number)
+  currentSort.dir = key === 'globalRank' ? 'asc' : 'desc';
   document.querySelectorAll('.sort-col-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('sortDirBtn').textContent = '↓ Desc';
+  document.getElementById('sortDirBtn').textContent = currentSort.dir === 'desc' ? '↓ Desc' : '↑ Asc';
   currentPage = 1; renderTable();
 }
 function toggleSortDir() {
@@ -885,7 +975,7 @@ function setFilter(f, btn) {
 function searchStudents(q) { currentSearch = q; currentPage = 1; renderTable(); }
 function sortTable(key) {
   if (currentSort.key === key) currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
-  else currentSort = {key, dir:'desc'};
+  else { currentSort = {key, dir: key === 'globalRank' ? 'asc' : 'desc'}; }
   renderTable();
 }
 
@@ -895,7 +985,10 @@ function downloadPDF() {
   const all = [...data].sort((a,b) => (a.rank||999) - (b.rank||999));
   tbody.innerHTML = all.map((s, i) => {
     const pct = maxTotal > 0 ? (s.total/maxTotal)*100 : 0, isTop = s.rank<=3 && s.total>0;
-    return `<tr class="${s.total===0?'no-attempt':''}"><td class="td-sno">${i+1}</td><td class="td-name">${s.name}${isTop?`<span class="topper-tag">#${s.rank}</span>`:''}</td><td><span class="badge ${s.easy>0?'badge-easy':'badge-zero'}">${s.easy}</span></td><td><span class="badge ${s.medium>0?'badge-medium':'badge-zero'}">${s.medium}</span></td><td><span class="badge ${s.hard>0?'badge-hard':'badge-zero'}">${s.hard}</span></td><td><strong>${s.total}</strong></td><td><div class="total-bar-wrap"><div class="total-bar-fill" style="width:${pct}%"></div></div></td></tr>`;
+    const rankDisplay = s.globalRank > 0
+      ? `<span class="badge badge-rank">#${s.globalRank.toLocaleString('en-IN')}</span>`
+      : `<span class="badge badge-zero">—</span>`;
+    return `<tr class="${s.total===0?'no-attempt':''}"><td class="td-sno">${i+1}</td><td class="td-name">${s.name}${isTop?`<span class="topper-tag">#${s.rank}</span>`:''}</td><td><span class="badge ${s.easy>0?'badge-easy':'badge-zero'}">${s.easy}</span></td><td><span class="badge ${s.medium>0?'badge-medium':'badge-zero'}">${s.medium}</span></td><td><span class="badge ${s.hard>0?'badge-hard':'badge-zero'}">${s.hard}</span></td><td><strong>${s.total}</strong></td><td>${rankDisplay}</td><td><div class="total-bar-wrap"><div class="total-bar-fill" style="width:${pct}%"></div></div></td></tr>`;
   }).join('');
   window.print();
   setTimeout(() => { tbody.innerHTML = saved; }, 600);
